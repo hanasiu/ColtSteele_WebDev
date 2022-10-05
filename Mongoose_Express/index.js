@@ -4,12 +4,17 @@ const path = require('path');
 const mongoose = require('mongoose');
 const methodOverride = require('method-override');
 const AppError = require('./AppError');
+const session = require('express-session');
+const flash = require('connect-flash');
 
+const sessionOptions = {secret:'thisisnotagoodsecret', resave: false, saveUninitialized: false};
+app.use(session(sessionOptions));
+app.use(flash());
 
 const Product = require('./models/product');
 const Farm = require('./models/farm')
 
-mongoose.connect('mongodb://localhost:27017/farmStandTake2')
+mongoose.connect('mongodb://localhost:27017/flashDemo')
     .then(() => {
         console.log("Mongo Connection Open!!");
     })
@@ -28,13 +33,18 @@ app.use(methodOverride('_method'));
 
 // FARM ROUTES
 
+app.use((req,res,next)=>{
+    res.locals.messages = req.flash('success');
+    next();
+})
+
 app.get('/farms', async (req, res) => {
     const farms = await Farm.find({});
     res.render('farms/index', { farms });
 })
 
 app.get('/farms/new', (req, res) => {
-    res.render('farms/new')
+    res.render('farms/new');
 })
 
 app.get('/farms/:id', async (req, res) => {
@@ -50,6 +60,7 @@ app.delete('/farms/:id', async(req, res) => {
 app.post('/farms', async (req, res) => {
     const farm = new Farm(req.body);
     farm.save();
+    req.flash('success', 'Sueccessfully made a new farm!');
     res.redirect('/farms');
 })
 
